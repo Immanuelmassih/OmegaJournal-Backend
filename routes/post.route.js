@@ -1,38 +1,97 @@
 const express = require('express');
 const app = express();
-const UserRoutes = express.Router();
-require('dotenv').config();
-// Require user model in our routes module
-let Users = require('../models/User');
-let jwt = require('jsonwebtoken');
-const nodemailer = require("nodemailer");
+const PostRoutes = express.Router();
+let Posts = require('../models/post.modal');
+const multer  = require('multer')
+//const upload = multer({ dest: 'uploads/' })
+var fomidable = require("formidable");
+
+// const upload = multer({ dest: 'uploads/' })
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    console.log ( file )
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.originalname)
+  }
+})
+
+const upload = multer({ storage: storage })
+
+PostRoutes.post('/uploadImage', upload.single('image'), (req, res, err) => {
+  console.log ( req.body )
+  res.status(200).json({
+    'message' : "Images has been uploaded"
+  })
+})
 
 // Defined store route
-UserRoutes.route('/add').post(function (req, res) {
-  let user = new Users(req.body);
-  const accessToken = jwt.sign(req.body, process.env.ACCESS_TOKEN_SECRET)
-  user.save()
+PostRoutes.route('/add').post(function (req, res) {
+  let post = new Posts(req.body);
+  post.save()
     .then(user => {
       res.status(200).json({
         'responseCode' : 200, 
-        'response'     : accessToken,
-        'message'      : 'user has been added successfully'
+        'message'      : 'post has been added successfully'
       });
     })
     .catch(err => {
       res.status(400).send({
          'responseCode' : 400, 
          'response'     : [],
-         'message'      : 'unable to save user'
+         'message'      : 'unable to save post'
       });
     });
 });
 
-UserRoutes.route('/login').post(function (req, res) {
+PostRoutes.route('/slider').get(function (req, res) {
+Posts.aggregate([
+  {
+    $lookup: {
+      from: "Categories",
+      localField: "category",
+      foreignField: "_id",
+      as: "category_info",
+    },
+  },
+  {
+    $unwind: "$category_info",
+  },
+  {
+    $lookup: {
+      from: "Tags",
+      localField: "tags",
+      foreignField: "_id",
+      as: "tag_Info",
+    },
+  },
+  {
+    $unwind: "$tag_Info",
+  },
+])
+  .then((result) => {
+      res.status(200).json({
+        'responseCode' :  200, 
+        'response'     :  result.filter(x => x.private === false),
+        'message'      : 'post has been added successfully'
+      });
+  })
+  .catch((error) => {
+    res.status(200).json({
+      'responseCode' :  200, 
+      'response'     :  [],
+      'message'      : 'post has been added successfully'
+    });
+  });
+})
+
+PostRoutes.route('/login').post(function (req, res) {
    Users.find({email : req.body.email, password : req.body.password},function (err, user) {
        if (user.length > 0) {
          let matchedUser = {
-             _id : user[0]._id.toString(),
              name : user[0].name,
              email : user[0].email,
              terms : user[0].terms,
@@ -61,7 +120,7 @@ UserRoutes.route('/login').post(function (req, res) {
    })
 });
 
-UserRoutes.route('/forgot').post(function (req, res) {
+PostRoutes.route('/forgot').post(function (req, res) {
   Users.find({email: req.body.email}, function (err, users){
        if (users.length > 0) {
           async function main() {
@@ -116,7 +175,7 @@ UserRoutes.route('/forgot').post(function (req, res) {
 });
 
 // Defined get data(index or listing) route
-UserRoutes.route('/').get(function (req, res) {
+PostRoutes.route('/').get(function (req, res) {
   user.find(function (err, users){
     if(err){
       console.log(err);
@@ -128,7 +187,7 @@ UserRoutes.route('/').get(function (req, res) {
 });
 
 // Defined edit route
-UserRoutes.route('/edit/:id').get(function (req, res) {
+PostRoutes.route('/edit/:id').get(function (req, res) {
   let id = req.params.id;
   user.findById(id, function (err, user){
       res.json(user);
@@ -136,7 +195,7 @@ UserRoutes.route('/edit/:id').get(function (req, res) {
 });
 
 //  Defined update route
-UserRoutes.route('/reset/:id').post(function (req, res) {
+PostRoutes.route('/reset/:id').post(function (req, res) {
   Users.findById(req.params.id, function(err, user) {
     if (!user)
       res.status(404).send("Record not found");
@@ -153,7 +212,7 @@ UserRoutes.route('/reset/:id').post(function (req, res) {
 });
 
 // Defined delete | remove | destroy route
-UserRoutes.route('/delete/:id').get(function (req, res) {
+PostRoutes.route('/delete/:id').get(function (req, res) {
     user.findByIdAndRemove({_id: req.params.id}, function(err, user){
         if(err) res.json(err);
         else res.json('Successfully removed');
@@ -173,4 +232,4 @@ function authenticateToken (req, res, next) {
   }
 }
 
-module.exports = UserRoutes;
+module.exports = PostRoutes;

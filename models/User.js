@@ -22,6 +22,10 @@ let Users = new Schema({
   package : {
     type : ObjectId,
     default : null
+  },
+  payment_id : {
+    type : String,
+    default : null
   }
 },{
     collection: 'Users'

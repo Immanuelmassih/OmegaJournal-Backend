@@ -14,7 +14,7 @@ RazorRoute.post("/orders", async (req, res) => {
         const options = {
             amount: 50000, // amount in smallest currency unit
             currency: "INR",
-            receipt: "receipt_order_74394",
+            receipt: "receipt_order_7432",
         };
 
         const order = await instance.orders.create(options);
@@ -28,21 +28,23 @@ RazorRoute.post("/orders", async (req, res) => {
 });
 
 RazorRoute.post("/success", async (req, res) => {
-  Users.findById("6130f54079f9de20130d780f", function(err, user) {
-    if (!user)
-      res.status(404).send("Record not found");
-    else {
-      user.payment = true;
-      user.package = "61333967c85fd6a8b00d8455";
-
-      user.save().then(user => {
-          res.json('Update complete');
-      })
-      .catch(err => {
-            res.status(400).send("unable to update the database");
+    Users.find({email: req.body.data.email}, function (err, user){
+      Users.findById(user[0]._id.toString(), function(err, user) {
+        if (!user)
+          res.status(404).send("Record not found");
+        else {
+          user.payment = true;
+          user.package = req.body.data.package;
+          user.payment_id = req.body.data.payment_id;
+          user.save().then(user => {
+              res.json('Update complete');
+          })
+          .catch(err => {
+                res.status(400).send("unable to update the database");
+          });
+        }
       });
-    }
-  });
+    })
 });
 
 module.exports = RazorRoute;
