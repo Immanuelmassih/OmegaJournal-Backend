@@ -5,7 +5,7 @@ let Posts = require('../models/post.modal');
 const multer  = require('multer')
 //const upload = multer({ dest: 'uploads/' })
 var fomidable = require("formidable");
-
+const mongoose = require('mongoose');
 // const upload = multer({ dest: 'uploads/' })
 
 const storage = multer.diskStorage({
@@ -49,6 +49,7 @@ PostRoutes.route('/add').post(function (req, res) {
 
 PostRoutes.route('/slider').get(function (req, res) {
 Posts.aggregate([
+  { $match : { private : false } },
   {
     $lookup: {
       from: "Categories",
@@ -67,15 +68,91 @@ Posts.aggregate([
       foreignField: "_id",
       as: "tag_Info",
     },
-  },
-  {
-    $unwind: "$tag_Info",
-  },
+  }
 ])
   .then((result) => {
       res.status(200).json({
         'responseCode' :  200, 
-        'response'     :  result.filter(x => x.private === false),
+        'response'     :  result,
+        'message'      : 'post has been added successfully'
+      });
+  })
+  .catch((error) => {
+    res.status(200).json({
+      'responseCode' :  200, 
+      'response'     :  [],
+      'message'      : 'No post found'
+    });
+  });
+})
+
+PostRoutes.route('/latest').get(function (req, res) {
+ Posts.find(function(err, posts) {
+   if ( posts ){
+      res.status(200).json({
+        'responseCode' : 200, 
+        'response'     : posts,
+        'message'      : 'Latest posts have been found'
+      });
+    }
+   if ( err ){
+      res.status(400).json({
+        'responseCode' : 400, 
+        'response'     : [],
+        'message'      : 'No post found'
+      });
+    }
+ }).limit(7).sort({"data" : -1})
+})
+
+PostRoutes.route('/related/:id').get(function (req, res) {
+ Posts.find({category : req.params.id},function(err, posts) {
+   if ( posts ){
+      res.status(200).json({
+        'responseCode' : 200, 
+        'response'     : posts,
+        'message'      : 'Related posts have been found'
+      });
+    }
+   if ( err ){
+      res.status(400).json({
+        'responseCode' : 400, 
+        'response'     : [],
+        'message'      : 'No post found'
+      });
+    }
+ }).limit(2)
+})
+
+PostRoutes.route('/detail/:id').get(function (req, res) {
+  Posts.aggregate([
+    { $match : 
+      { _id : mongoose.Types.ObjectId(req.params.id) } 
+    },
+    {
+      $lookup: {
+        from: "Categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "category_info",
+      },
+    },
+    {
+      $unwind: "$category_info",
+    },
+    {
+      $lookup: {
+        from: "Tags",
+        localField: "tags",
+        foreignField: "_id",
+        as: "tag_Info",
+      },
+    }
+  ])
+  .then((result) => {
+      res.status(200).json({
+        'responseCode' :  200, 
+        'response'     :  result,
         'message'      : 'post has been added successfully'
       });
   })
@@ -87,6 +164,80 @@ Posts.aggregate([
     });
   });
 })
+
+PostRoutes.route('/category/:id').get(function (req, res) {
+  Posts.aggregate([
+    { $match : 
+      { category : mongoose.Types.ObjectId(req.params.id) } 
+    },
+    {
+      $lookup: {
+        from: "Categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "category_info",
+      },
+    },
+    {
+      $unwind: "$category_info",
+    }
+  ])
+  .then((result) => {
+      res.status(200).json({
+        'responseCode' :  200, 
+        'response'     :  result,
+        'message'      : 'post has been added successfully'
+      });
+  })
+  .catch((error) => {
+    res.status(200).json({
+      'responseCode' :  200, 
+      'response'     :  [],
+      'message'      : 'post has been added successfully'
+    });
+  });
+}) 
+
+PostRoutes.route('/tag/:id').get(function (req, res) {
+  Posts.aggregate([
+    { $match : 
+      { tags : mongoose.Types.ObjectId(req.params.id) } 
+    },
+    {
+      $lookup: {
+        from: "Categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "category_info",
+      },
+    },
+    {
+      $unwind: "$category_info",
+    },
+    {
+      $lookup: {
+        from: "Tags",
+        localField: "tags",
+        foreignField: "_id",
+        as: "tag_Info",
+      },
+    }
+  ])
+  .then((result) => {
+      res.status(200).json({
+        'responseCode' :  200, 
+        'response'     :  result,
+        'message'      : 'post has been added successfully'
+      });
+  })
+  .catch((error) => {
+    res.status(200).json({
+      'responseCode' :  200, 
+      'response'     :  [],
+      'message'      : 'post has been added successfully'
+    });
+  });
+}) 
 
 PostRoutes.route('/login').post(function (req, res) {
    Users.find({email : req.body.email, password : req.body.password},function (err, user) {

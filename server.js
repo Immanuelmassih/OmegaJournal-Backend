@@ -12,11 +12,13 @@ const express = require('express'),
    const PostRoutes        = require('./routes/post.route');
    const CategoryRoutes    = require('./routes/categories.route');
    const TagRoutes         = require('./routes/tags.router');
+   const CommentsRoutes    = require('./routes/comments.route');
     mongoose.Promise = global.Promise;
     mongoose.connect(config.DB, { useNewUrlParser: true ,  useUnifiedTopology: true }).then(
       () => {console.log('Database is connected') },
       err => { console.log('Can not connect to the database'+ err)}
     );
+
 
     const app = express();
     app.use(bodyParser.json());
@@ -27,8 +29,11 @@ const express = require('express'),
     app.use('/contact',  ContactRoutes);
     app.use('/post',     PostRoutes);
     app.use('/category', CategoryRoutes);
+    app.use('/comment', CommentsRoutes);
     app.use('/tag', TagRoutes);
     const port = process.env.PORT || 4000;
+    var publicDir = require('path').join(__dirname,'/public'); 
+    app.use(express.static(publicDir)); 
 
     const server = app.listen(port, function(){
      console.log('Listening on port ' + port);

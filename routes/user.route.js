@@ -6,6 +6,7 @@ require('dotenv').config();
 let Users = require('../models/User');
 let jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer");
+const mongoose = require('mongoose');
 
 // Defined store route
 UserRoutes.route('/add').post(function (req, res) {
@@ -124,6 +125,37 @@ UserRoutes.route('/').get(function (req, res) {
     else {
       res.json(users);
     }
+  });
+});
+
+// Defined get data(index or listing) route
+UserRoutes.route('/userDetail/:id').get(function (req, res) {
+  Users.aggregate([
+  { $match : { _id : mongoose.Types.ObjectId(req.params.id) } },
+  {
+    $lookup: {
+      from: "Post",
+      localField: "_id",
+      foreignField: "author",
+      as: "postList",
+    },
+  },
+  { $addFields: {postCount: {$size: "$postList"}}}
+])
+  .then((result) => {
+      delete result[0].postList
+      res.status(200).json({
+        'responseCode' :  200, 
+        'response'     :  result,
+        'message'      : 'User details has been found'
+      });
+  })
+  .catch((error) => {
+    res.status(200).json({
+      'responseCode' :  200, 
+      'response'     :  [],
+      'message'      : 'User details has not been found'
+    });
   });
 });
 
