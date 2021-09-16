@@ -23,7 +23,10 @@ const express = require('express'),
     const app = express();
     app.use(allowCrossDomain);
     app.use(bodyParser.json());
-    app.use(cors());
+    app.use(cors({
+      origin : "https://61438bbe93c50e00a746a9d7--pedantic-lalande-90a362.netlify.app",
+      methods : ["GET", "POST", "PUT", "DELETE"]
+    }));
     app.use('/user',     UserRoutes);
     app.use('/payment',  RazorRoute);
     app.use('/plan',     PlanRoutes);
@@ -35,21 +38,6 @@ const express = require('express'),
     const port = process.env.PORT || 4000;
     var publicDir = require('path').join(__dirname,'/public'); 
     app.use(express.static(publicDir)); 
-    app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*")
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested, Content-Type, Accept Authorization"
-    )
-    if (req.method === "OPTIONS") {
-      res.header(
-        "Access-Control-Allow-Methods",
-        "POST, PUT, PATCH, GET, DELETE"
-      )
-      return res.status(200).json({})
-    }
-    next()
-    })
     const server = app.listen(port, function(){
      console.log('Listening on port ' + port);
     });
