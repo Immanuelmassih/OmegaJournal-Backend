@@ -18,15 +18,19 @@ const express = require('express'),
       () => {console.log('Database is connected') },
       err => { console.log('Can not connect to the database'+ err)}
     );
-
+    
+    express.use(function (req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.header("Access-Control-Allow-Methods", "POST,DELETE,PUT,GET,OPTIONS");
+        res.header("Access-Control-Allow-Headers", req.headers['access-control-request-headers']);
+        res.header("Access-Control-Request-Method", req.headers['access-control-request-method']);
+        next();
+    });
 
     const app = express();
-    app.use(allowCrossDomain);
     app.use(bodyParser.json());
-    app.use(cors({
-      origin : "https://61439d0306a1fb0d602c55cf--pedantic-lalande-90a362.netlify.app/",
-      methods : ["GET", "POST", "PUT", "DELETE"]
-    }));
+    app.use(cors());
     app.use('/user',     UserRoutes);
     app.use('/payment',  RazorRoute);
     app.use('/plan',     PlanRoutes);
@@ -38,6 +42,7 @@ const express = require('express'),
     const port = process.env.PORT || 4000;
     var publicDir = require('path').join(__dirname,'/public'); 
     app.use(express.static(publicDir)); 
+
     const server = app.listen(port, function(){
      console.log('Listening on port ' + port);
     });
