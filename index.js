@@ -24,7 +24,7 @@ const express = require('express'),
     app.use(allowCrossDomain);
     app.use(bodyParser.json());
     app.use(cors({
-      origin : "http://localhost:3000/",
+      origin : "https://61439d0306a1fb0d602c55cf--pedantic-lalande-90a362.netlify.app/",
       methods : ["GET", "POST", "PUT", "DELETE"]
     }));
     app.use('/user',     UserRoutes);
