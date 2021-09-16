@@ -21,6 +21,7 @@ const express = require('express'),
 
 
     const app = express();
+    app.use(allowCrossDomain);
     app.use(bodyParser.json());
     app.use(cors());
     app.use('/user',     UserRoutes);
