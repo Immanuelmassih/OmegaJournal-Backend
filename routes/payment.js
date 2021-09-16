@@ -3,7 +3,7 @@ const express = require("express");
 const Razorpay = require("razorpay");
 let Users = require('../models/User');
 const RazorRoute = express.Router();
-
+let jwt = require('jsonwebtoken');
 RazorRoute.post("/orders", async (req, res) => {
     try {
         const instance = new Razorpay({
@@ -12,9 +12,9 @@ RazorRoute.post("/orders", async (req, res) => {
         });
 
         const options = {
-            amount: 50000, // amount in smallest currency unit
+            amount: req.body.price * 100  , // amount in smallest currency unit
             currency: "INR",
-            receipt: "receipt_order_7432",
+            receipt: req.body.price._id
         };
 
         const order = await instance.orders.create(options);
@@ -28,23 +28,42 @@ RazorRoute.post("/orders", async (req, res) => {
 });
 
 RazorRoute.post("/success", async (req, res) => {
-    Users.find({email: req.body.data.email}, function (err, user){
-      Users.findById(user[0]._id.toString(), function(err, user) {
-        if (!user)
-          res.status(404).send("Record not found");
-        else {
-          user.payment = true;
-          user.package = req.body.data.package;
-          user.payment_id = req.body.data.payment_id;
-          user.save().then(user => {
-              res.json('Update complete');
-          })
-          .catch(err => {
-                res.status(400).send("unable to update the database");
-          });
-        }
+  Users.findById(req.body.data._id, function(err, user) {
+    if (!user)
+      res.status(404).send("Record not found");
+    else {
+      user.payment = true;
+      user.package = req.body.data.package;
+      user.payment_id = req.body.data.payment_id;
+      user.orderCreationId = req.body.data.orderCreationId;
+      user.razorpayPaymentId = req.body.data.razorpayPaymentId;
+      user.razorpayOrderId = req.body.data.razorpayOrderId;
+      user.razorpaySignature = req.body.data.razorpaySignature;
+      user.payMentDate = new Date();
+      user.save().then(user => {
+      let userDetails = {
+        _id : user._id,
+        name : user.name,
+        email : user.email,
+        image : user.image,
+        terms : user.terms,
+        payment : user.payment,
+        package : user.package,
+        payment_id : user.payment_id,
+        payMentDate : user.payMentDate
+      }  
+      const accessToken = jwt.sign(userDetails, process.env.ACCESS_TOKEN_SECRET)
+        res.json({
+           'responseCode' : 200,
+           'token'        : accessToken,
+           'message'      : 'Payment has been made successfully'
+        })
+      })
+      .catch(err => {
+            res.status(400).send("unable to update the database");
       });
-    })
+    }
+  });
 });
 
 module.exports = RazorRoute;

@@ -13,7 +13,6 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/')
   },
   filename: function (req, file, cb) {
-    console.log ( file )
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
     cb(null, file.originalname)
   }
@@ -22,7 +21,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage })
 
 PostRoutes.post('/uploadImage', upload.single('image'), (req, res, err) => {
-  console.log ( req.body )
   res.status(200).json({
     'message' : "Images has been uploaded"
   })
@@ -364,9 +362,21 @@ PostRoutes.route('/reset/:id').post(function (req, res) {
 
 // Defined delete | remove | destroy route
 PostRoutes.route('/delete/:id').get(function (req, res) {
-    user.findByIdAndRemove({_id: req.params.id}, function(err, user){
-        if(err) res.json(err);
-        else res.json('Successfully removed');
+    Posts.findOneAndDelete({_id: req.params.id}, function(err, post){
+        if ( post ) {
+          res.status(200).json({
+            'responseCode' :  200, 
+            'response'     :  post,
+            'message'      : 'Post has been deleted successfully'
+          })
+        }
+        if ( err ) {
+          res.status(200).json({
+            'responseCode' :  200, 
+            'response'     :  [],
+            'message'      : 'Post has not been deleted'
+          });
+        }
     });
 });
 

@@ -9,6 +9,9 @@ let Users = new Schema({
   email: {
     type: String
   },
+  image : {
+    type : String
+  },
   password: {
     type: String
   },
@@ -26,6 +29,21 @@ let Users = new Schema({
   payment_id : {
     type : String,
     default : null
+  },
+  orderCreationId : {
+    type : String
+  },
+  razorpayPaymentId : {
+    type : String
+  },
+  razorpayOrderId : {
+    type : String
+  },
+  razorpaySignature : {
+    type : String
+  },
+  payMentDate : {
+    type : Date
   }
 },{
     collection: 'Users'

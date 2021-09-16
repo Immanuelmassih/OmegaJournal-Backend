@@ -7,6 +7,37 @@ let Users = require('../models/User');
 let jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer");
 const mongoose = require('mongoose');
+const multer  = require('multer');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+
+      Users.findById(req.params.id, function(err, user) {
+        if (user){
+          user.image = file.originalname;
+          user.save()
+        }
+      });
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.originalname)
+  }
+})
+
+const upload = multer({ storage: storage })
+
+UserRoutes.post('/avatar/:id', upload.single('image'), (req, res, err) => {
+
+
+  res.status(200).json({
+    'responseCode' : 200, 
+    'response'     : [],
+    'message' : "Images has been uploaded"
+  })
+})
 
 // Defined store route
 UserRoutes.route('/add').post(function (req, res) {
@@ -37,7 +68,8 @@ UserRoutes.route('/login').post(function (req, res) {
              name : user[0].name,
              email : user[0].email,
              terms : user[0].terms,
-             payment : user[0].payment
+             payment : user[0].payment,
+             payMentDate : user[0].payMentDate
          }
          const accessToken = jwt.sign(matchedUser, process.env.ACCESS_TOKEN_SECRET)
           res.status(200).json({
@@ -140,10 +172,17 @@ UserRoutes.route('/userDetail/:id').get(function (req, res) {
       as: "postList",
     },
   },
+   {
+    $lookup: {
+      from: "Categories",
+      localField: "postList.category",
+      foreignField: "_id",
+      as: "category_info",
+    },
+  },
   { $addFields: {postCount: {$size: "$postList"}}}
 ])
   .then((result) => {
-      delete result[0].postList
       res.status(200).json({
         'responseCode' :  200, 
         'response'     :  result,
@@ -186,9 +225,21 @@ UserRoutes.route('/reset/:id').post(function (req, res) {
 
 // Defined delete | remove | destroy route
 UserRoutes.route('/delete/:id').get(function (req, res) {
-    user.findByIdAndRemove({_id: req.params.id}, function(err, user){
-        if(err) res.json(err);
-        else res.json('Successfully removed');
+    user.findByIdAndRemove({_id: req.params.id}, function(err, post){
+        if ( post ) {
+          res.status(200).json({
+            'responseCode' :  200, 
+            'response'     :  result,
+            'message'      : 'Post has been deleted successfully'
+          })
+        }
+        if ( err ) {
+          res.status(200).json({
+            'responseCode' :  200, 
+            'response'     :  [],
+            'message'      : 'Post has not been deleted'
+          });
+        }
     });
 });
 
