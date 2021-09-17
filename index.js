@@ -1,9 +1,11 @@
 const express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),
-    cors = require('cors'),
+    //cors = require('cors'),
     mongoose = require('mongoose'),
     config = require('./DB');
+    import cors from “cors”;
+
 
    const UserRoutes        = require('./routes/user.route');
    const RazorRoute        = require('./routes/payment');
